@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres
+    #container_name: test_proj_postgres
+    env_file:
+      - .env
+    networks:
+      - db
+  web:
+    build: .
+    #container_name: test_proj_web
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+      - elasticsearch
+    env_file:
+      - .env
+    networks:
+      - db
+      - elasticnet
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    #container_name: test_proj_elastic
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "9200:9200"
+    networks:
+      - elasticnet
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+  
+networks:
+  elasticnet:
+    driver: bridge
+  db:
+    driver: bridge
+
+volumes:
+  elasticsearch-data:
